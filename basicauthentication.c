@@ -81,6 +81,15 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     {
 	// handle GET request
 	if (0 == strcmp (method, "GET")) {
+
+		struct GNUNET_PQ_ExecuteStatement es[] = {
+			GNUNET_PQ_make_execute("SELECT * FROM pg_stat_activity;"),
+			GNUNET_PQ_EXECUTE_STATEMENT_END		
+		};
+
+		GNUNET_PQ_exec_statements(conn, es);
+
+
 		const char *page = "<html><body>GET: A secret.</body></html>";
       		response =
 			MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
