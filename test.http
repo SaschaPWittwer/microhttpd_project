@@ -1,0 +1,10 @@
+GET http://localhost:8888 HTTP/1.1
+Authorization: Basic dG9iaTp0b2Jp
+
+
+###
+PUT http://localhost:8888 HTTP/1.1
+Authorization: Basic dG9iaTp0b2Jp
+
+
+###
