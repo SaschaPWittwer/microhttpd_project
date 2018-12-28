@@ -42,6 +42,26 @@ static int boys_check_auth(struct MHD_Connection *connection, const char *exp_us
 }
 
 
+static void handle_result(void *cls, PGresult *result, unsigned int num_results){
+  for (unsigned int i=0;i < num_results; i++){
+    char *val; size_t val_size;
+    char *val2; size_t val2_size;
+    struct GNUNET_PQ_ResultSpec rs[]={
+      GNUNET_PQ_result_spec_variable_size ("usename", &val, &val_size), 
+      GNUNET_PQ_result_spec_variable_size("pid", &val2, &val2_size),
+      GNUNET_PQ_result_spec_end
+    };
+    GNUNET_PQ_extract_result (result, rs, i);
+
+    char *pid = PQgetvalue(result, i, 0);
+    char *usename = PQgetvalue(result, i, 1);
+    printf("pid=%s usename=%s\n", pid, usename);
+
+    GNUNET_PQ_cleanup_result (rs);
+  }
+}
+
+
 
 
 
@@ -82,12 +102,19 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 	// handle GET request
 	if (0 == strcmp (method, "GET")) {
 
-		struct GNUNET_PQ_ExecuteStatement es[] = {
-			GNUNET_PQ_make_execute("SELECT * FROM pg_stat_activity;"),
-			GNUNET_PQ_EXECUTE_STATEMENT_END		
+		struct GNUNET_PQ_PreparedStatement ps[] = {
+			GNUNET_PQ_make_prepare("select_stats", "SELECT pid, usename FROM pg_stat_activity;",0),
+			GNUNET_PQ_PREPARED_STATEMENT_END		
 		};
 
-		GNUNET_PQ_exec_statements(conn, es);
+		GNUNET_PQ_prepare_statements(conn, ps);
+
+    struct GNUNET_PQ_QueryParam params [] = {
+      GNUNET_PQ_query_param_end
+    };
+
+    GNUNET_PQ_eval_prepared_multi_select(conn,"select_stats",params, &handle_result,NULL);
+
 
 
 		const char *page = "<html><body>GET: A secret.</body></html>";
@@ -113,7 +140,7 @@ int
 main ()
 {
 
-  conn = GNUNET_PQ_connect("postgres://mhd");
+  conn = GNUNET_PQ_connect("dbname=mhd");
 
   struct MHD_Daemon *daemon;
 
