@@ -37,19 +37,21 @@ static int boys_check_auth(struct MHD_Connection *connection, const char *exp_us
 }
 
 
+
+
+
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls)
 {
-  char *user;
-  char *pass;
   int fail;
   int ret;
   struct MHD_Response *response;
 
-  if (0 != strcmp (method, "GET"))
+  // only allow GET and PUT
+  if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "PUT")))
     return MHD_NO;
   if (NULL == *con_cls)
     {
@@ -57,6 +59,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       return MHD_YES;
     }
 
+  // check correct credentials
   fail = boys_check_auth(connection, "root", "pa$$w0rd");
 
   if (fail)
@@ -71,11 +74,21 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     }
   else
     {
-      const char *page = "<html><body>A secret.</body></html>";
-      response =
-	MHD_create_response_from_buffer (strlen (page), (void *) page,
-					 MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	// handle GET request
+	if (0 == strcmp (method, "GET")) {
+		const char *page = "<html><body>GET: A secret.</body></html>";
+      		response =
+			MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
+      		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	}
+
+	// handle PUT request
+	if (0 == strcmp (method, "PUT")) {
+		const char *page = "<html><body>PUT: A secret.</body></html>";
+      		response =
+			MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
+      		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);	
+	}
     }
   MHD_destroy_response (response);
   return ret;
