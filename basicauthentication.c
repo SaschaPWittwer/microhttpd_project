@@ -14,8 +14,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <libpq-fe.h>
+#include <gnunet/platform.h>
+#include <gnunet/gnunet_pq_lib.h>
+
 #define PORT 8888
 
+PGconn *conn;
 
 static int boys_check_auth(struct MHD_Connection *connection, const char *exp_user, const char *exp_password) {
 	char *user;
@@ -98,6 +103,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 int
 main ()
 {
+
+  conn = GNUNET_PQ_connect("postgres://mhd");
+
   struct MHD_Daemon *daemon;
 
   daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
@@ -108,5 +116,8 @@ main ()
   (void) getchar ();
 
   MHD_stop_daemon (daemon);
+
+  PQfinish(conn);
+
   return 0;
 }

@@ -9,3 +9,12 @@ sudo apt-get install postgresql-all
 sudo -u postgres createuser -s $USER
 createdb mhd
 
+## libgnunetpq installation
+recompile gnunet
+add ´-I/usr/include/postgresql/´ to build command
+add the following includes to your C File: 
+* ´#include <libpq-fe.h>´
+* ´#include <gnunet/platform.h>´
+* ´#include <gnunet/gnunet_pq_lib.h>´
+
+
