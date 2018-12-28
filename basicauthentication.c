@@ -17,6 +17,26 @@
 #define PORT 8888
 
 
+static int boys_check_auth(struct MHD_Connection *connection, const char *exp_user, const char *exp_password) {
+	char *user;
+	char *pass;
+	int fail;
+
+	pass = NULL;
+	user = MHD_basic_auth_get_username_password (connection, &pass);
+
+  	fail = ( (user == NULL) ||
+	   (0 != strcmp (user, exp_user)) ||
+	   (0 != strcmp (pass, exp_password) ) );
+
+
+  	if (user != NULL) free (user);
+  	if (pass != NULL) free (pass);
+
+	return fail;
+}
+
+
 static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
@@ -36,13 +56,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       *con_cls = connection;
       return MHD_YES;
     }
-  pass = NULL;
-  user = MHD_basic_auth_get_username_password (connection, &pass);
-  fail = ( (user == NULL) ||
-	   (0 != strcmp (user, "root")) ||
-	   (0 != strcmp (pass, "pa$$w0rd") ) );  
-  if (user != NULL) free (user);
-  if (pass != NULL) free (pass);
+
+  fail = boys_check_auth(connection, "root", "pa$$w0rd");
+
   if (fail)
     {
       const char *page = "<html><body>Go away.</body></html>";
