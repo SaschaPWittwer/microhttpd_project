@@ -3,9 +3,9 @@ Authorization: Basic cm9vdDpwYSQkdzByZA==
 
 
 ###
-PUT http://localhost:8888 HTTP/1.1
+POST http://localhost:8888 HTTP/1.1
 Authorization: Basic cm9vdDpwYSQkdzByZA==
 Content-Type: application/json
 
-tralala
+{"name": "Cedric"}
 ###

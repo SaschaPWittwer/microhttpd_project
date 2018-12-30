@@ -123,7 +123,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   int fail;
 
   // only allow GET and PUT
-  if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "PUT"))) {
+  if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "PUT")) && (0 != strcmp (method, "POST"))) {
     return MHD_NO;
   }
     
@@ -160,11 +160,15 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 	  }
 
     // handle PUT request
-    if (0 == strcmp (method, "PUT")) {
-      // empty
+    if (0 == strcmp (method, "POST")) {
+      json_t *j = json_pack("{s:i}", "POST", 5);
+      char *s = json_dumps(j, 0);
+      return send_json(connection, s);
     }
   }
-  return ret;
+  json_t *j = json_pack("{s:i}", "ERROR", 5);
+  char *s = json_dumps(j, 0);
+  return send_json(connection, s);
 }
 
 
