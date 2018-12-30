@@ -13,14 +13,62 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <jansson.h>
 
 #include <libpq-fe.h>
 #include <gnunet/platform.h>
 #include <gnunet/gnunet_pq_lib.h>
 
+#define MAXANSWERSIZE   512
 #define PORT 8888
 
+struct connection_info_struct
+{
+  int connectiontype;
+  char *answerstring;
+  struct MHD_PostProcessor *postprocessor;
+};
+
 PGconn *conn;
+
+static int send_json (struct MHD_Connection *connection, const char *json) {
+  int ret;
+  struct MHD_Response *response;
+  response = MHD_create_response_from_buffer (strlen (json), (void *) json, MHD_RESPMEM_PERSISTENT);
+
+  if (!response) {
+    return MHD_NO;
+  }
+
+  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  MHD_destroy_response (response);
+  return ret;
+}
+
+static int
+iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
+              const char *filename, const char *content_type,
+              const char *transfer_encoding, const char *data, uint64_t off,
+              size_t size)
+{
+  struct connection_info_struct *con_info = coninfo_cls;
+
+
+  json_t *j = json_pack("{s:i,s:i}", "hello", 5, "world", 10);
+  char *answerstring;
+  answerstring = malloc (MAXANSWERSIZE);
+
+  if (!answerstring) {
+    return MHD_NO;
+  }
+
+  char *s = json_dumps(j, 0);
+
+  snprintf (answerstring, MAXANSWERSIZE, s, data);
+  con_info->answerstring = answerstring;
+
+  return MHD_NO;
+}
 
 static int boys_check_auth(struct MHD_Connection *connection, const char *exp_user, const char *exp_password) {
 	char *user;
@@ -71,67 +119,51 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls)
 {
-  int fail;
   int ret;
-  struct MHD_Response *response;
+  int fail;
 
   // only allow GET and PUT
-  if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "PUT")))
+  if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "PUT"))) {
     return MHD_NO;
-  if (NULL == *con_cls)
-    {
-      *con_cls = connection;
-      return MHD_YES;
-    }
+  }
+    
+  if (NULL == *con_cls) {
+    *con_cls = connection;
+    return MHD_YES;
+  }
 
   // check correct credentials
   fail = boys_check_auth(connection, "root", "pa$$w0rd");
 
-  if (fail)
-    {
-      const char *page = "<html><body>Go away.</body></html>";
-      response =
-	MHD_create_response_from_buffer (strlen (page), (void *) page,
-					 MHD_RESPMEM_PERSISTENT);
-      ret = MHD_queue_basic_auth_fail_response (connection,
-						"my realm",
-						response);
+  if (fail) {
+      json_t *j = json_pack("{s:i}", "no_auth", 5);
+      char *s = json_dumps(j, 0);
+      return send_json(connection, s);
+  } else {
+	  // handle GET request
+	  if (0 == strcmp (method, "GET")) {
+      struct GNUNET_PQ_PreparedStatement ps[] = {
+        GNUNET_PQ_make_prepare("select_stats", "SELECT pid, usename FROM pg_stat_activity;",0),
+        GNUNET_PQ_PREPARED_STATEMENT_END		
+      };
+
+		  GNUNET_PQ_prepare_statements(conn, ps);
+
+      struct GNUNET_PQ_QueryParam params [] = {
+        GNUNET_PQ_query_param_end
+      };
+
+      GNUNET_PQ_eval_prepared_multi_select(conn,"select_stats",params, &handle_result,NULL);
+      json_t *j = json_pack("{s:i}", "GET", 5);
+      char *s = json_dumps(j, 0);
+      return send_json(connection, s);
+	  }
+
+    // handle PUT request
+    if (0 == strcmp (method, "PUT")) {
+      // empty
     }
-  else
-    {
-	// handle GET request
-	if (0 == strcmp (method, "GET")) {
-
-		struct GNUNET_PQ_PreparedStatement ps[] = {
-			GNUNET_PQ_make_prepare("select_stats", "SELECT pid, usename FROM pg_stat_activity;",0),
-			GNUNET_PQ_PREPARED_STATEMENT_END		
-		};
-
-		GNUNET_PQ_prepare_statements(conn, ps);
-
-    struct GNUNET_PQ_QueryParam params [] = {
-      GNUNET_PQ_query_param_end
-    };
-
-    GNUNET_PQ_eval_prepared_multi_select(conn,"select_stats",params, &handle_result,NULL);
-
-
-
-		const char *page = "<html><body>GET: A secret.</body></html>";
-      		response =
-			MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
-      		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-	}
-
-	// handle PUT request
-	if (0 == strcmp (method, "PUT")) {
-		const char *page = "<html><body>PUT: A secret.</body></html>";
-      		response =
-			MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
-      		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);	
-	}
-    }
-  MHD_destroy_response (response);
+  }
   return ret;
 }
 

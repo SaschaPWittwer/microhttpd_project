@@ -11,6 +11,7 @@ createdb mhd
 
 ## libgnunetpq installation
 recompile gnunet
+* ./configure --prefix=$HOME
 add ´-I/usr/include/postgresql/´ to build command
 add the following includes to your C File: 
 * ´#include <libpq-fe.h>´
