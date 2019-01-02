@@ -22,16 +22,19 @@
 #define MAXANSWERSIZE   512
 #define PORT 8888
 
-struct connection_info_struct
-{
-  int connectiontype;
-  char *answerstring;
-  struct MHD_PostProcessor *postprocessor;
-};
+#define JSON_CONTENT  "application/json"
+#define MAX_POST_SIZE 4096
+static int postcount = 0;
+
+typedef struct PostHandle {
+  char *data;
+  int len;
+  int uid;
+} PostHandle;
 
 PGconn *conn;
 
-static int send_json (struct MHD_Connection *connection, const char *json) {
+static int send_json (struct MHD_Connection *connection, const char *json, unsigned int http_status_code) {
   int ret;
   struct MHD_Response *response;
   response = MHD_create_response_from_buffer (strlen (json), (void *) json, MHD_RESPMEM_PERSISTENT);
@@ -40,34 +43,9 @@ static int send_json (struct MHD_Connection *connection, const char *json) {
     return MHD_NO;
   }
 
-  ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+  ret = MHD_queue_response (connection, http_status_code, response);
   MHD_destroy_response (response);
   return ret;
-}
-
-static int
-iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
-              const char *filename, const char *content_type,
-              const char *transfer_encoding, const char *data, uint64_t off,
-              size_t size)
-{
-  struct connection_info_struct *con_info = coninfo_cls;
-
-
-  json_t *j = json_pack("{s:i,s:i}", "hello", 5, "world", 10);
-  char *answerstring;
-  answerstring = malloc (MAXANSWERSIZE);
-
-  if (!answerstring) {
-    return MHD_NO;
-  }
-
-  char *s = json_dumps(j, 0);
-
-  snprintf (answerstring, MAXANSWERSIZE, s, data);
-  con_info->answerstring = answerstring;
-
-  return MHD_NO;
 }
 
 static int boys_check_auth(struct MHD_Connection *connection, const char *exp_user, const char *exp_password) {
@@ -80,7 +58,7 @@ static int boys_check_auth(struct MHD_Connection *connection, const char *exp_us
 
   	fail = ( (user == NULL) ||
 	   (0 != strcmp (user, exp_user)) ||
-	   (0 != strcmp (pass, exp_password) ) );
+	   (0 != strcmp (pass, exp_password) ));
 
 
   	if (user != NULL) free (user);
@@ -88,7 +66,6 @@ static int boys_check_auth(struct MHD_Connection *connection, const char *exp_us
 
 	return fail;
 }
-
 
 static void handle_result(void *cls, PGresult *result, unsigned int num_results){
   for (unsigned int i=0;i < num_results; i++){
@@ -109,27 +86,12 @@ static void handle_result(void *cls, PGresult *result, unsigned int num_results)
   }
 }
 
-
-
-
-
-static int
-answer_to_connection (void *cls, struct MHD_Connection *connection,
-                      const char *url, const char *method,
-                      const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
-{
-  int ret;
+static int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls) {
   int fail;
 
   // only allow GET and PUT
   if ((0 != strcmp (method, "GET")) && (0 != strcmp (method, "PUT")) && (0 != strcmp (method, "POST"))) {
     return MHD_NO;
-  }
-    
-  if (NULL == *con_cls) {
-    *con_cls = connection;
-    return MHD_YES;
   }
 
   // check correct credentials
@@ -138,7 +100,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   if (fail) {
       json_t *j = json_pack("{s:i}", "no_auth", 5);
       char *s = json_dumps(j, 0);
-      return send_json(connection, s);
+      return send_json(connection, s, MHD_HTTP_UNAUTHORIZED);
   } else {
 	  // handle GET request
 	  if (0 == strcmp (method, "GET")) {
@@ -156,40 +118,63 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
       GNUNET_PQ_eval_prepared_multi_select(conn,"select_stats",params, &handle_result,NULL);
       json_t *j = json_pack("{s:i}", "GET", 5);
       char *s = json_dumps(j, 0);
-      return send_json(connection, s);
+      return send_json(connection, s, MHD_HTTP_OK);
 	  }
 
-    // handle PUT request
+    // handle POST request
     if (0 == strcmp (method, "POST")) {
+      const char *param;
+      const char *encoding;
+      int    contentlen=-1;
+      PostHandle *posthandle = *con_cls;
+
+      // Let make sure we have the right encoding and a valid length
+      encoding = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_TYPE);
+      param = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH);
+      if (param) sscanf (param,"%i",&contentlen);
+
+      if (posthandle == NULL) {
+        posthandle = malloc (sizeof (PostHandle));   // allocate application POST processor handle
+        posthandle->uid = postcount ++;                // build a UID for DEBUG
+        posthandle->len = 0;                           // effective length within POST handler
+        posthandle->data= malloc (contentlen +1);      // allocate memory for full POST data + 1 for '\0' enf of string
+        *con_cls = posthandle;                         // attache POST handle to current HTTP session
+        return MHD_YES;
+      }
+
+      if (*upload_data_size) {
+        fprintf (stderr, "Update Post Request UID=%d\n", posthandle->uid);
+        memcpy (&posthandle->data[posthandle->len], upload_data, *upload_data_size);
+        posthandle->len = posthandle->len + *upload_data_size;
+        *upload_data_size = 0;
+        return MHD_YES;
+      }
+
+      posthandle->data[posthandle->len] = '\0';
+
       json_t *j = json_pack("{s:i}", "POST", 5);
       char *s = json_dumps(j, 0);
-      return send_json(connection, s);
+      return send_json(connection, s, MHD_HTTP_OK);
     }
   }
+
   json_t *j = json_pack("{s:i}", "ERROR", 5);
   char *s = json_dumps(j, 0);
-  return send_json(connection, s);
+  return send_json(connection, s, MHD_HTTP_INTERNAL_SERVER_ERROR);
 }
 
-
-int
-main ()
-{
-
+int main () {
   conn = GNUNET_PQ_connect("dbname=mhd");
-
   struct MHD_Daemon *daemon;
+  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 
-  daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
-                             &answer_to_connection, NULL, MHD_OPTION_END);
-  if (NULL == daemon)
+  if (NULL == daemon) {
     return 1;
+  }
 
   (void) getchar ();
 
   MHD_stop_daemon (daemon);
-
   PQfinish(conn);
-
   return 0;
 }
