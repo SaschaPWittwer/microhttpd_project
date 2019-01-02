@@ -3,9 +3,15 @@ Authorization: Basic cm9vdDpwYSQkdzByZA==
 
 
 ###
+
+GET http://localhost:8888 HTTP/1.1
+Authorization: Basic Y2V2bzpzdXBlcjEyMzQh
+
+
+###
 POST http://localhost:8888 HTTP/1.1
 Authorization: Basic cm9vdDpwYSQkdzByZA==
 Content-Type: application/json
 
-{"name": "Cedric"}
+{"username": "cevo", "password": "super1234!"}
 ###

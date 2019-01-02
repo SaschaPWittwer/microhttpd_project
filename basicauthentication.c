@@ -15,9 +15,7 @@
 #include <stdio.h>
 #include <jansson.h>
 
-#include <libpq-fe.h>
-#include <gnunet/platform.h>
-#include <gnunet/gnunet_pq_lib.h>
+#include <dbutil.h>
 
 #define MAXANSWERSIZE   512
 #define PORT 8888
@@ -32,7 +30,7 @@ typedef struct PostHandle {
   int uid;
 } PostHandle;
 
-PGconn *conn;
+PGconn *db_conn;
 
 static int send_json (struct MHD_Connection *connection, const char *json, unsigned int http_status_code) {
   int ret;
@@ -48,42 +46,23 @@ static int send_json (struct MHD_Connection *connection, const char *json, unsig
   return ret;
 }
 
-static int boys_check_auth(struct MHD_Connection *connection, const char *exp_user, const char *exp_password) {
-	char *user;
-	char *pass;
-	int fail;
+static int boys_check_auth(struct MHD_Connection *connection) {
+	char *given_username;
+	char *given_pass;
 
-	pass = NULL;
-	user = MHD_basic_auth_get_username_password (connection, &pass);
+	given_pass = NULL;
+	given_username = MHD_basic_auth_get_username_password (connection, &given_pass);
+  User* db_user = get_user(db_conn, given_username, given_pass);
 
-  	fail = ( (user == NULL) ||
-	   (0 != strcmp (user, exp_user)) ||
-	   (0 != strcmp (pass, exp_password) ));
+  if (db_user != NULL) {
+    free (given_username);
+  } 
 
-
-  	if (user != NULL) free (user);
-  	if (pass != NULL) free (pass);
-
-	return fail;
-}
-
-static void handle_result(void *cls, PGresult *result, unsigned int num_results){
-  for (unsigned int i=0;i < num_results; i++){
-    char *val; size_t val_size;
-    char *val2; size_t val2_size;
-    struct GNUNET_PQ_ResultSpec rs[]={
-      GNUNET_PQ_result_spec_variable_size ("usename", &val, &val_size), 
-      GNUNET_PQ_result_spec_variable_size("pid", &val2, &val2_size),
-      GNUNET_PQ_result_spec_end
-    };
-    GNUNET_PQ_extract_result (result, rs, i);
-
-    char *pid = PQgetvalue(result, i, 0);
-    char *usename = PQgetvalue(result, i, 1);
-    printf("pid=%s usename=%s\n", pid, usename);
-
-    GNUNET_PQ_cleanup_result (rs);
+  if (db_user != NULL) {
+    free (given_pass);
   }
+
+  return db_user == NULL;
 }
 
 static int answer_to_connection (void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls) {
@@ -95,7 +74,7 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
   }
 
   // check correct credentials
-  fail = boys_check_auth(connection, "root", "pa$$w0rd");
+  fail = boys_check_auth(connection);
 
   if (fail) {
       json_t *j = json_pack("{s:i}", "no_auth", 5);
@@ -104,18 +83,6 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
   } else {
 	  // handle GET request
 	  if (0 == strcmp (method, "GET")) {
-      struct GNUNET_PQ_PreparedStatement ps[] = {
-        GNUNET_PQ_make_prepare("select_stats", "SELECT pid, usename FROM pg_stat_activity;",0),
-        GNUNET_PQ_PREPARED_STATEMENT_END		
-      };
-
-		  GNUNET_PQ_prepare_statements(conn, ps);
-
-      struct GNUNET_PQ_QueryParam params [] = {
-        GNUNET_PQ_query_param_end
-      };
-
-      GNUNET_PQ_eval_prepared_multi_select(conn,"select_stats",params, &handle_result,NULL);
       json_t *j = json_pack("{s:i}", "GET", 5);
       char *s = json_dumps(j, 0);
       return send_json(connection, s, MHD_HTTP_OK);
@@ -146,6 +113,16 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
         fprintf (stderr, "Update Post Request UID=%d\n", posthandle->uid);
         memcpy (&posthandle->data[posthandle->len], upload_data, *upload_data_size);
         posthandle->len = posthandle->len + *upload_data_size;
+
+        // insert the user
+        json_t *body = json_loads(upload_data, upload_data_size, NULL);
+        
+        User* user = malloc(sizeof(User));
+        user->username = json_string_value(json_object_get(body, "username"));
+        user->password = json_string_value(json_object_get(body, "password"));
+
+        create_user(db_conn, user);
+
         *upload_data_size = 0;
         return MHD_YES;
       }
@@ -164,7 +141,9 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
 }
 
 int main () {
-  conn = GNUNET_PQ_connect("dbname=mhd");
+  db_conn = init_db_connection();
+  int success = init_db(db_conn);
+
   struct MHD_Daemon *daemon;
   daemon = MHD_start_daemon (MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 
@@ -175,6 +154,6 @@ int main () {
   (void) getchar ();
 
   MHD_stop_daemon (daemon);
-  PQfinish(conn);
+  PQfinish(db_conn);
   return 0;
 }

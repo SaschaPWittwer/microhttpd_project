@@ -53,6 +53,8 @@ dkms.conf
 
 # Compiled binaries
 main
+basicauthentication
+hellobrowser
 
 # Settings
 .vscode
