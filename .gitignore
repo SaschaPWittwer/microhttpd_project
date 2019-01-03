@@ -58,3 +58,4 @@ hellobrowser
 
 # Settings
 .vscode
+*.swp
