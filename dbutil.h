@@ -10,8 +10,8 @@
  * struct to hold a users details
  */
 typedef struct {
-    char *username;
-    char *password;
+	char *username;
+	char *password;
 } User;
 
 PGconn* init_db_connection();
