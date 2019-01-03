@@ -98,36 +98,42 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
       // Let make sure we have the right encoding and a valid length
       encoding = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_TYPE);
       param = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH);
-      if (param) sscanf (param,"%i",&contentlen);
+      if (param) {
+        sscanf (param,"%i",&contentlen);
+      } 
 
+      // In POST mode 1st call is only design to establish POST processor.
+      // As JSON content is not supported out of box, but must provide something equivalent.
       if (posthandle == NULL) {
-        posthandle = malloc (sizeof (PostHandle));   // allocate application POST processor handle
-        posthandle->uid = postcount ++;                // build a UID for DEBUG
-        posthandle->len = 0;                           // effective length within POST handler
-        posthandle->data= malloc (contentlen +1);      // allocate memory for full POST data + 1 for '\0' enf of string
-        *con_cls = posthandle;                         // attache POST handle to current HTTP session
+        posthandle = malloc (sizeof (PostHandle));      // allocate application POST processor handle
+        posthandle->uid = postcount ++;                 // build a UID for DEBUG
+        posthandle->len = 0;                            // effective length within POST handler
+        posthandle->data= malloc (contentlen +1);       // allocate memory for full POST data + 1 for '\0' enf of string
+        *con_cls = posthandle;                          // attache POST handle to current HTTP session
         return MHD_YES;
       }
 
+      // This time we receive partial/all Post data. Note that even if we get all POST data. We should nevertheless
+      // return MHD_YES and not process the request directly. Otherwise Libmicrohttpd is unhappy and fails with
+      // 'Internal application error, closing connection'.
       if (*upload_data_size) {
         fprintf (stderr, "Update Post Request UID=%d\n", posthandle->uid);
-        memcpy (&posthandle->data[posthandle->len], upload_data, *upload_data_size);
+        memcpy(&posthandle->data[posthandle->len], upload_data, *upload_data_size);
         posthandle->len = posthandle->len + *upload_data_size;
-
-        // insert the user
-        json_t *body = json_loads(upload_data, upload_data_size, NULL);
-        
-        User* user = malloc(sizeof(User));
-        user->username = json_string_value(json_object_get(body, "username"));
-        user->password = json_string_value(json_object_get(body, "password"));
-
-        create_user(db_conn, user);
-
         *upload_data_size = 0;
         return MHD_YES;
       }
 
+      // We should only start to process DATA after Libmicrohttpd call or application handler with *upload_data_size==0
+      // At this level we're may verify that we got everything and process DATA
       posthandle->data[posthandle->len] = '\0';
+
+      // proceed request data
+      json_t *body = json_loads(posthandle->data, posthandle->len, NULL);
+      User* user = malloc(sizeof(User));
+      user->username = json_string_value(json_object_get(body, "username"));
+      user->password = json_string_value(json_object_get(body, "password"));
+      create_user(db_conn, user);
 
       json_t *j = json_pack("{s:i}", "POST", 5);
       char *s = json_dumps(j, 0);

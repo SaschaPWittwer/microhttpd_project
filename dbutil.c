@@ -54,12 +54,12 @@ User* get_user(PGconn* db_conn, char* username, char* password) {
         GNUNET_PQ_query_param_end
     };
 
-    char* val_username; size_t username_size;
+    char* val_username; size_t username_size; 
     char* val_password; size_t password_size;
 
     struct GNUNET_PQ_ResultSpec rs[]={
-      GNUNET_PQ_result_spec_variable_size("username", &val_username, &username_size), 
-      GNUNET_PQ_result_spec_variable_size("password", &val_password, &password_size),
+      GNUNET_PQ_result_spec_variable_size("username", (void**) &val_username, &username_size), 
+      GNUNET_PQ_result_spec_variable_size("password", (void**) &val_password, &password_size),
       GNUNET_PQ_result_spec_end
     };
 
