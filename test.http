@@ -1,17 +1,16 @@
-GET http://localhost:8888 HTTP/1.1
-Authorization: Basic cm9vdDpwYSQkdzByZA==
+GET http://localhost:8888/user HTTP/1.1
+Authorization: Basic am9yaXM6c3VwZXIxMjM0IQ==
 
 
 ###
 
-GET http://localhost:8888 HTTP/1.1
-Authorization: Basic Y2V2bzpzdXBlcjEyMzQh
+GET http://localhost:8888/user HTTP/1.1
+Authorization: Basic am9yaXM6c3VwZXIxMjM0IQ==
 
 
 ###
-POST http://localhost:8888 HTTP/1.1
-Authorization: Basic cm9vdDpwYSQkdzByZA==
+POST http://localhost:8888/user HTTP/1.1
 Content-Type: application/json
 
-{"username": "cevo", "password": "super1234!"}
+{"username": "joris", "password": "super1234!"}
 ###
