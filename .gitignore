@@ -54,7 +54,9 @@ dkms.conf
 # Compiled binaries
 main
 basicauthentication
+microserver
 hellobrowser
 
 # Settings
 .vscode
+*.swp
