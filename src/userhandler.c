@@ -1,5 +1,7 @@
 #include <string.h>
+#include <jansson.h>
 #include <userhandler.h>
+#include <responseutil.h>
 
 int UH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, const char *method)
 {
@@ -7,24 +9,18 @@ int UH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, const c
 	if (strcmp(method, MHD_HTTP_METHOD_GET) == 0)
 	{
 		User *db_user = get_user(db_conn, "cevo", "super1234!");
-		int len = strlen(db_user->username) + strlen(db_user->password) + 12;
-		char *output = malloc(len*sizeof(char)+1);
-		sprintf(output, "User: %s, Pw: %s", db_user->username, db_user->password);
-		printf("User: %s, Pw: %s", db_user->username, db_user->password);
 
-		struct MHD_Response *response = MHD_create_response_from_buffer(strlen(output),
-				(void*)output, MHD_RESPMEM_PERSISTENT);
-		if (!response)
-		{
-			return MHD_NO;
-		}
+		json_t *json = json_pack("{s:s, s:s}", "Username", db_user->username, "Password", db_user->password);
+		char *content = json_dumps(json, 0);
+		printf("Jason: %s\n", content);
 
-		ret = MHD_queue_response(connection, 200, response);
+		ret = micro_respond_JSON(connection, content, MHD_HTTP_OK);
+
 		free((void*)db_user->username);
 		free((void*)db_user->password);
 		free(db_user);
-		free(output);
-		MHD_destroy_response(response);
+		free(content);
+		json_decref(json);
 	}
 	return ret;
 }

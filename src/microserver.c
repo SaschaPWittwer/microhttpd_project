@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <microhttpd.h>
 
+#include <microserver.h>
 #include <dbutil.h>
 #include <roothandler.h>
 #include <userhandler.h>
 
 #define PORT 8888
-#define CONTENT_TYPE_HTML "text/html"
-#define CONTENT_TYPE_JSON "application/json"
 
 PGconn *db_conn;
 
