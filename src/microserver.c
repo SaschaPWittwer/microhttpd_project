@@ -2,8 +2,12 @@
 #include <microhttpd.h>
 
 #include <dbutil.h>
+#include <roothandler.h>
+#include <userhandler.h>
 
 #define PORT 8888
+#define CONTENT_TYPE_HTML "text/html"
+#define CONTENT_TYPE_JSON "application/json"
 
 PGconn *db_conn;
 
@@ -12,25 +16,20 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 		size_t *upload_data_size, void **con_cls)
 {
 	int ret = 0;
-	User *db_user = get_user(db_conn, "cevo", "super1234!");
-
-	int len = strlen(db_user->username) + strlen(db_user->password) + 12;
-	char *output = malloc(len*sizeof(char)+1);
-	sprintf(output, "User: %s, Pw: %s", db_user->username, db_user->password);
-	printf("User: %s, Pw: %s", db_user->username, db_user->password);
-
-	struct MHD_Response *response = MHD_create_response_from_buffer(strlen(output),
-			(void*)output, MHD_RESPMEM_PERSISTENT);
-	if (!response)
+	if (NULL == *con_cls)
 	{
-		return MHD_NO;
+		*con_cls = connection;
+		return MHD_YES;
 	}
-	ret = MHD_queue_response(connection, 200, response);
-	free((void*)db_user->username);
-	free((void*)db_user->password);
-	free(db_user);
-	free(output);
-	MHD_destroy_response(response);
+	if (strcmp(url, "/") == 0 && strcmp(method, MHD_HTTP_METHOD_GET) == 0)
+	{
+		return RH_HandleGet(connection);
+	}
+	if (strcmp(url, "/user") == 0)
+	{
+		return UH_HandleRequest(db_conn, connection, method);
+	}
+
 	return ret;
 }
 
