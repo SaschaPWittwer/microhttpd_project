@@ -3,6 +3,9 @@
 #include <gnunet/platform.h>
 #include <gnunet/gnunet_pq_lib.h>
 
+#ifndef DBUTIL_H
+#define DBUTIL_H
+
 #define TRUE      1;
 #define FALSE     0;
 
@@ -30,3 +33,4 @@ unsigned int create_user(PGconn* db_conn, User* user);
  * Get a user by username
  */
 User* get_user(PGconn* db_conn, char* username, char* password);
+#endif
