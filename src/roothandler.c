@@ -1,13 +1,11 @@
 #include <string.h>
 #include <roothandler.h>
+#include <microserver.h>
+#include <responseutil.h>
 
 int RH_HandleGet(struct MHD_Connection *connection)
 {
-	int ret = 0;
-	char content[] = "Hello World!";
-	struct MHD_Response *response = MHD_create_response_from_buffer(strlen(content),
-			(void*)content, MHD_RESPMEM_PERSISTENT);
-	ret = MHD_queue_response(connection, 200, response);
-	MHD_destroy_response(response);
+	char content[] = "<html><head><title>YOOO</title></head><body><h1>Hello World</h1></body>";
+	int ret = micro_respond(connection, content, MHD_HTTP_OK, CONTENT_TYPE_HTML);
 	return ret;
 }

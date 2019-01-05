@@ -2,6 +2,7 @@
 #include <jansson.h>
 #include <userhandler.h>
 #include <responseutil.h>
+#include <microserver.h>
 
 int UH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, const char *method)
 {
@@ -14,7 +15,7 @@ int UH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, const c
 		char *content = json_dumps(json, 0);
 		printf("Jason: %s\n", content);
 
-		ret = micro_respond_JSON(connection, content, MHD_HTTP_OK);
+		ret = micro_respond(connection, content, MHD_HTTP_OK, CONTENT_TYPE_JSON);
 
 		free((void*)db_user->username);
 		free((void*)db_user->password);

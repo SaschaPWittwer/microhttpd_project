@@ -2,7 +2,8 @@
 #include <microserver.h>
 #include <responseutil.h>
 
-int micro_respond_JSON(struct MHD_Connection *connection, const char *json, unsigned int http_status_code)
+int micro_respond(struct MHD_Connection *connection, const char *json,
+		unsigned int http_status_code, const char* content_type)
 {
   int ret;
   struct MHD_Response *response;
@@ -12,7 +13,7 @@ int micro_respond_JSON(struct MHD_Connection *connection, const char *json, unsi
 	  return MHD_NO;
   }
 
-  MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON);
+  MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, content_type);
 
   ret = MHD_queue_response(connection, http_status_code, response);
   MHD_destroy_response(response);
