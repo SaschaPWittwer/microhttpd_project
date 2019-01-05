@@ -54,8 +54,10 @@ User* get_user(PGconn* db_conn, char* username, char* password) {
 		GNUNET_PQ_query_param_end
 	};
 
-	char* val_username; size_t username_size; 
-	char* val_password; size_t password_size;
+	char* val_username;
+	size_t username_size; 
+	char* val_password;
+	size_t password_size;
 
 	struct GNUNET_PQ_ResultSpec rs[]={
 		GNUNET_PQ_result_spec_variable_size("username", (void**) &val_username, &username_size), 
@@ -67,9 +69,11 @@ User* get_user(PGconn* db_conn, char* username, char* password) {
 
 	if (result == GNUNET_DB_STATUS_SUCCESS_ONE_RESULT) {
 		User* user = malloc(sizeof(User));
-		user->username = val_username;
-		user->password = val_password;
-		return user;
+		if (user != NULL) {
+			user->username = val_username;
+			user->password = val_password;
+			return user;
+		}
 	}
 
 	return NULL;
