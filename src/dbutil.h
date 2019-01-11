@@ -15,6 +15,7 @@
 typedef struct {
 	const char* username;
 	const char* password;
+	const char* jwt;
 } User;
 
 PGconn* init_db_connection();
@@ -28,6 +29,13 @@ unsigned int init_db(PGconn* db_conn);
  *  function to create a user
  */
 unsigned int create_user(PGconn* db_conn, User* user);
+
+
+/**
+ *  function to update user
+ */
+
+unsigned int update_user(PGconn* db_conn, User* user);
 
 /**
  * Get a user by username

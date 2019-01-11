@@ -5,6 +5,7 @@
 #include <dbutil.h>
 #include <roothandler.h>
 #include <userhandler.h>
+#include <jwtauth.h>
 
 #define PORT 8888
 
@@ -15,11 +16,6 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 		size_t *upload_data_size, void **con_cls)
 {
 	int ret = 0;
-	if (NULL == *con_cls)
-	{
-		*con_cls = connection;
-		return MHD_YES;
-	}
 	if (strcmp(url, "/") == 0 && strcmp(method, MHD_HTTP_METHOD_GET) == 0)
 	{
 		return RH_HandleGet(connection);
@@ -28,6 +24,10 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 	{
 		return UH_HandleRequest(db_conn, connection, method);
 	}
+	if (strcmp(url, "/token") == 0)
+	{
+		return TH_HandleRequest(db_conn, connection, con_cls, method, upload_data, upload_data_size);
+	}
 
 	return ret;
 }
@@ -35,6 +35,7 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 int main()
 {
 	db_conn = init_db_connection();
+	init_db(db_conn);
 
 	struct MHD_Daemon *daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
 			&requestDispatcher, NULL, MHD_OPTION_END);

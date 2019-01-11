@@ -9,7 +9,7 @@ PGconn* init_db_connection() {
  */
 unsigned int init_db(PGconn* db_conn) {
 	struct GNUNET_PQ_ExecuteStatement s[] = {
-		GNUNET_PQ_make_execute("CREATE TABLE IF NOT EXISTS \"user\" (username VARCHAR(69) NOT NULL PRIMARY KEY, password VARCHAR NOT NULL);\n"),
+		GNUNET_PQ_make_execute("CREATE TABLE IF NOT EXISTS \"user\" (username VARCHAR(69) NOT NULL PRIMARY KEY, password VARCHAR NOT NULL, jwt VARCHAR);\n"),
 		GNUNET_PQ_EXECUTE_STATEMENT_END
 	};
 
@@ -41,6 +41,24 @@ unsigned int create_user(PGconn* db_conn, User *user) {
 	return TRUE;
 }
 
+unsigned int update_user(PGconn* db_conn, User* user){
+	struct GNUNET_PQ_PreparedStatement s[] = {
+		GNUNET_PQ_make_prepare("update_user", "UPDATE \"user\" SET password = $2, SET jwt $3, WHERE username = $1;\n", 2),
+		GNUNET_PQ_PREPARED_STATEMENT_END
+	};
+	GNUNET_PQ_prepare_statements(db_conn, s);
+
+	struct GNUNET_PQ_QueryParam params[] = {
+		GNUNET_PQ_query_param_string(user->username),
+		GNUNET_PQ_query_param_string(user->password),
+		GNUNET_PQ_query_param_string(user->jwt),
+		GNUNET_PQ_query_param_end
+	};
+
+	int success = GNUNET_PQ_eval_prepared_non_select(db_conn, "update_user", params);
+	return TRUE;
+}
+
 User* get_user(PGconn* db_conn, char* username, char* password) {
 	struct GNUNET_PQ_PreparedStatement s[] = {
 		GNUNET_PQ_make_prepare("select_user", "SELECT username, password FROM \"user\" WHERE username=$1 AND password=$2;", 2),
@@ -58,10 +76,13 @@ User* get_user(PGconn* db_conn, char* username, char* password) {
 	size_t username_size; 
 	char* val_password;
 	size_t password_size;
+	char* val_jwt;
+	size_t jwt_size;
 
 	struct GNUNET_PQ_ResultSpec rs[]={
 		GNUNET_PQ_result_spec_variable_size("username", (void**) &val_username, &username_size), 
 		GNUNET_PQ_result_spec_variable_size("password", (void**) &val_password, &password_size),
+		GNUNET_PQ_result_spec_variable_size("jwt", (void**) &val_jwt, &jwt_size),
 		GNUNET_PQ_result_spec_end
 	};
 
@@ -72,6 +93,7 @@ User* get_user(PGconn* db_conn, char* username, char* password) {
 		if (user != NULL) {
 			user->username = val_username;
 			user->password = val_password;
+			user->jwt = val_jwt;
 			return user;
 		}
 	}

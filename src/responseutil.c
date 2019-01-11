@@ -7,7 +7,7 @@ int micro_respond(struct MHD_Connection *connection, const char *json,
 {
   int ret;
   struct MHD_Response *response;
-  response = MHD_create_response_from_buffer(strlen(json), (void *)json, MHD_RESPMEM_PERSISTENT);
+  response = MHD_create_response_from_buffer(strlen(json), (void *)json, MHD_RESPMEM_MUST_COPY);
   if (!response)
   {
 	  return MHD_NO;
