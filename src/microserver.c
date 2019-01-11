@@ -34,6 +34,7 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 
 int main()
 {
+	// GNUNET_log_setup("microserver", "DEBUG", NULL);
 	db_conn = init_db_connection();
 
 	struct MHD_Daemon *daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
