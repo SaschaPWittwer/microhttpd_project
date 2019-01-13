@@ -3,6 +3,7 @@
 
 #include <microserver.h>
 #include <dbutil.h>
+#include <auth.h>
 #include <roothandler.h>
 #include <userhandler.h>
 #include <jwtauth.h>
@@ -12,10 +13,16 @@
 PGconn *db_conn;
 
 static int requestDispatcher(void *cls, struct MHD_Connection *connection, const char *url,
-		const char *method, const char *version, const char *upload_data,
-		size_t *upload_data_size, void **con_cls)
+							 const char *method, const char *version, const char *upload_data,
+							 size_t *upload_data_size, void **con_cls)
 {
 	int ret = 0;
+	if (NULL == *con_cls)
+	{
+		*con_cls = connection;
+		return MHD_YES;
+	}
+
 	if (strcmp(url, "/") == 0 && strcmp(method, MHD_HTTP_METHOD_GET) == 0)
 	{
 		return RH_HandleGet(connection);
@@ -38,7 +45,7 @@ int main()
 	init_db(db_conn);
 
 	struct MHD_Daemon *daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
-			&requestDispatcher, NULL, MHD_OPTION_END);
+												 &requestDispatcher, NULL, MHD_OPTION_END);
 
 	if (NULL == daemon)
 	{

@@ -14,3 +14,7 @@ Content-Type: application/json
 
 {"username": "joris", "password": "super1234!"}
 ###
+
+
+GET http://localhost:8888/user HTTP/1.1
+Authorization: Bearer am9yaXM6c3VwZXIxMjM0IQ==

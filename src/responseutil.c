@@ -3,14 +3,14 @@
 #include <responseutil.h>
 
 int micro_respond(struct MHD_Connection *connection, const char *json,
-		unsigned int http_status_code, const char* content_type)
+                  unsigned int http_status_code, const char *content_type)
 {
   int ret;
   struct MHD_Response *response;
   response = MHD_create_response_from_buffer(strlen(json), (void *)json, MHD_RESPMEM_MUST_COPY);
   if (!response)
   {
-	  return MHD_NO;
+    return MHD_NO;
   }
 
   MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, content_type);
