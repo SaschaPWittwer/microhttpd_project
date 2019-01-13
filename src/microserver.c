@@ -6,7 +6,7 @@
 #include <auth.h>
 #include <roothandler.h>
 #include <userhandler.h>
-#include <jwtauth.h>
+#include <tokenhandler.h>
 
 #define PORT 8888
 
@@ -29,7 +29,11 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 	}
 	if (strcmp(url, "/user") == 0)
 	{
-		return UH_HandleRequest(db_conn, connection, method);
+		printf("Url: %s\n | Method: %s\n", url, method);
+		if (strcmp(method, MHD_HTTP_METHOD_GET) == 0)
+			return UH_HandleGet(db_conn, connection, method);
+		if (strcmp(method, MHD_HTTP_METHOD_PUT) == 0)
+			return UH_HandlePut(db_conn, connection, con_cls, method, upload_data, upload_data_size);
 	}
 	if (strcmp(url, "/token") == 0)
 	{

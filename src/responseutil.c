@@ -19,3 +19,11 @@ int micro_respond(struct MHD_Connection *connection, const char *json,
   MHD_destroy_response(response);
   return ret;
 }
+
+int micro_empty_response(struct MHD_Connection *connection, unsigned int http_status_code)
+{
+  // struct MHD_Response *response;
+  // response = MHD_create_response_from_buffer(0, (void *)NULL, MHD_RESPMEM_MUST_FREE);
+  int ret = MHD_queue_response(connection, http_status_code, NULL);
+  return ret;
+}

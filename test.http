@@ -18,3 +18,12 @@ Content-Type: application/json
 
 GET http://localhost:8888/user HTTP/1.1
 Authorization: Bearer am9yaXM6c3VwZXIxMjM0IQ==
+
+###
+PUT http://localhost:8888/user HTTP/1.1
+Authorization: Bearer am9yaXM6c3VwZXIxMjM0IQ==
+
+{
+    "username": "sascha",
+    "password": "foobar"
+}
