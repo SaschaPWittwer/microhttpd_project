@@ -32,8 +32,8 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 		printf("Url: %s\n | Method: %s\n", url, method);
 		if (strcmp(method, MHD_HTTP_METHOD_GET) == 0)
 			return UH_HandleGet(db_conn, connection, method);
-		if (strcmp(method, MHD_HTTP_METHOD_PUT) == 0)
-			return UH_HandlePut(db_conn, connection, con_cls, method, upload_data, upload_data_size);
+		if (strcmp(method, MHD_HTTP_METHOD_POST) == 0)
+			return UH_HandlePost(db_conn, connection, con_cls, method, upload_data, upload_data_size);
 	}
 	if (strcmp(url, "/token") == 0)
 	{
