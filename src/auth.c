@@ -1,6 +1,7 @@
 #include <jwt.h>
 #include <microhttpd.h>
 #include <string.h>
+#include <time.h>
 
 static const unsigned char *key = (unsigned char *)"kjahsdfb72723ubasdfhjbhaskfj!!asd";
 
@@ -16,8 +17,10 @@ int validateJwt(struct MHD_Connection *connection)
     printf("Type: %s\n", type);
     printf("Token: %s\n", token);
 
-    struct jwt **jwt = NULL;
-    int valid = jwt_decode(jwt, token, key, strlen((char *)key));
+    jwt_t *jwt = NULL;
+    int valid = jwt_decode(&jwt, token, key, strlen((char *)key));
+    const char *iat = jwt_get_grant(jwt, "iat");
+    printf("Issued at: %s\n", iat);
 
     return valid;
 }
@@ -36,7 +39,13 @@ char *generateJwt(char *username, char *role)
     success = jwt_add_grant(jwt, "user", username);
     if (success != 0)
         return NULL;
+
     success = jwt_add_grant(jwt, "role", role);
+    if (success != 0)
+        return NULL;
+
+    const time_t timestamp = time(NULL);
+    success = jwt_add_grant(jwt, "iat", ctime(&timestamp));
     if (success != 0)
         return NULL;
 

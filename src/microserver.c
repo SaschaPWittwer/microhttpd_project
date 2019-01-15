@@ -44,7 +44,10 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 		if (strcmp(method, MHD_HTTP_METHOD_GET) == 0)
 			return UH_HandleGet(db_conn, connection, method, userId);
 		if (strcmp(method, MHD_HTTP_METHOD_POST) == 0)
+		{
+			validateJwt(connection);
 			return UH_HandlePost(db_conn, connection, con_cls, method, upload_data, upload_data_size);
+		}
 	}
 	if (strcmp(url, "/token") == 0)
 	{

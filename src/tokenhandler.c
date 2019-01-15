@@ -47,6 +47,7 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
         // 'Internal application error, closing connection'.
         if (*upload_data_size)
         {
+            posthandle->data = malloc((int)*upload_data_size + 1);
             memcpy(&posthandle->data[posthandle->len], upload_data, *upload_data_size);
             posthandle->len = posthandle->len + *upload_data_size;
             *upload_data_size = 0;
