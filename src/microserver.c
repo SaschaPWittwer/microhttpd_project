@@ -27,11 +27,22 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 	{
 		return RH_HandleGet(connection);
 	}
-	if (strcmp(url, "/user") == 0)
+	if (strncmp(url, "/user", 5) == 0)
 	{
+		int i = 0;
+		char *p = strtok(url, "/");
+		char *urlBits[2];
+
+		while (p != NULL)
+		{
+			urlBits[i++] = p;
+			p = strtok(NULL, "/");
+		}
+		int userId = urlBits[1];
+
 		printf("Url: %s\n | Method: %s\n", url, method);
 		if (strcmp(method, MHD_HTTP_METHOD_GET) == 0)
-			return UH_HandleGet(db_conn, connection, method);
+			return UH_HandleGet(db_conn, connection, method, userId);
 		if (strcmp(method, MHD_HTTP_METHOD_POST) == 0)
 			return UH_HandlePost(db_conn, connection, con_cls, method, upload_data, upload_data_size);
 	}

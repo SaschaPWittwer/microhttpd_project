@@ -95,3 +95,32 @@ User *get_user(PGconn *db_conn, const char *username, const char *password)
 
 	return NULL;
 }
+
+
+char *get_userById(PGconn *db_conn, int id)
+{
+	struct GNUNET_PQ_PreparedStatement s[] = {
+		GNUNET_PQ_make_prepare("select_user", "SELECT username FROM \"user\" WHERE id=$1;", 1),
+		GNUNET_PQ_PREPARED_STATEMENT_END};
+	GNUNET_PQ_prepare_statements(db_conn, s);
+
+	struct GNUNET_PQ_QueryParam params[] = {
+		GNUNET_PQ_query_param_string(username),
+		GNUNET_PQ_query_param_end};
+
+	char *val_username;
+	size_t username_size;
+
+	struct GNUNET_PQ_ResultSpec rs[] = {
+		GNUNET_PQ_result_spec_variable_size("username", (void **)&val_username, &username_size),
+		GNUNET_PQ_result_spec_end};
+
+	int result = GNUNET_PQ_eval_prepared_singleton_select(db_conn, "select_user", params, rs);
+
+	if (result == GNUNET_DB_STATUS_SUCCESS_ONE_RESULT)
+	{
+		return val_username;
+	}
+
+	return NULL;
+}
