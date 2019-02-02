@@ -41,4 +41,7 @@ unsigned int update_user(PGconn *db_conn, User *user);
  * Get a user by username
  */
 User *get_user(PGconn *db_conn, const char *username, const char *password);
+
+char *get_userById(PGconn *db_conn, char *id);
+
 #endif

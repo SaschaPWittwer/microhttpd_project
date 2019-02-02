@@ -1,32 +1,16 @@
-GET http://localhost:8888/user HTTP/1.1
-Authorization: Basic am9yaXM6c3VwZXIxMjM0IQ==
-
+###
+GET http://localhost:8888/user/1 HTTP/1.1
 
 ###
-
-GET http://localhost:8888/user HTTP/1.1
-Authorization: Basic am9yaXM6c3VwZXIxMjM0IQ==
-
-
-###
-POST http://localhost:8888/user HTTP/1.1
-Content-Type: application/json
-
-{"username": "joris", "password": "super1234!"}
-###
-
-
-GET http://localhost:8888/user HTTP/1.1
-Authorization: Bearer am9yaXM6c3VwZXIxMjM0IQ==
-
-###
-POST http://localhost:8888/user HTTP/1.1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiJTYXQgRmViICAyIDE0OjM0OjM1IDIwMTlcbiIsInJvbGUiOiJBZG1pbiIsInVzZXIiOiJzYXNjaGEifQ.xqFeSGsOkTnB77Uio9UxkrV20DLoHKNBuL2Im-buISM
+PUT http://localhost:8888/user/1 HTTP/1.1
 
 {
     "username": "sascha",
     "password": "foobar"
 }
+
+###
+DELETE http://localhost:8888/user/1 HTTP/1.1
 
 ###
 POST http://localhost:8888/user HTTP/1.1
@@ -35,6 +19,17 @@ POST http://localhost:8888/user HTTP/1.1
     "username": "sascha",
     "password": "foobar"
 }
+
+
+
+
+
+
+
+
+
+
+
 
 ###
 POST http://localhost:8888/token HTTP/1.1
