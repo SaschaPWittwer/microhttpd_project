@@ -1,3 +1,5 @@
+#include <microhttpd.h>
+
 #ifndef MICROSERVER_H
 #define MICROSERVER_H
 
@@ -6,9 +8,14 @@
 
 #endif
 
-typedef struct PostHandle
+typedef struct MySessionData
 {
+    char *userId;
+    struct MHD_Connection *connection;
+    int jwtValid;
+
     char *data;
     int len;
     int uid;
-} PostHandle;
+
+} MySessionData;

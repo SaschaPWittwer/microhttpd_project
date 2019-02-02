@@ -11,6 +11,9 @@ int validateJwt(struct MHD_Connection *connection)
                                                               MHD_HEADER_KIND,
                                                               MHD_HTTP_HEADER_AUTHORIZATION);
 
+    if (NULL == authHeaderValue)
+        return 0;
+
     const char *type = strtok((char *)authHeaderValue, " ");
     const char *token = strtok(NULL, " ");
 

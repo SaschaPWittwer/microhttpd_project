@@ -24,6 +24,6 @@ int micro_empty_response(struct MHD_Connection *connection, unsigned int http_st
 {
   // struct MHD_Response *response;
   // response = MHD_create_response_from_buffer(0, (void *)NULL, MHD_RESPMEM_MUST_FREE);
-  int ret = MHD_queue_response(connection, http_status_code, NULL);
+  int ret = MHD_queue_response(connection, http_status_code, "");
   return ret;
 }

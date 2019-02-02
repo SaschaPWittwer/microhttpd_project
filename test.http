@@ -2,11 +2,14 @@
 GET http://localhost:8888/user/1 HTTP/1.1
 
 ###
+DELETE http://localhost:8888/user/1 HTTP/1.1
+
+###
 PUT http://localhost:8888/user/1 HTTP/1.1
 
 {
-    "username": "sascha",
-    "password": "foobar"
+    "username": "joris",
+    "password": "lol"
 }
 
 ###
@@ -16,8 +19,8 @@ DELETE http://localhost:8888/user/1 HTTP/1.1
 POST http://localhost:8888/user HTTP/1.1
 
 {
-    "username": "sascha",
-    "password": "foobar"
+    "username": "Joris",
+    "password": "wtf"
 }
 
 

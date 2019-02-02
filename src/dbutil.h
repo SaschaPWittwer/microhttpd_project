@@ -35,7 +35,7 @@ unsigned int create_user(PGconn *db_conn, User *user);
  *  function to update user
  */
 
-unsigned int update_user(PGconn *db_conn, User *user);
+unsigned int update_user(PGconn *db_conn, User *user, char *id);
 
 /**
  * Get a user by username
@@ -43,5 +43,7 @@ unsigned int update_user(PGconn *db_conn, User *user);
 User *get_user(PGconn *db_conn, const char *username, const char *password);
 
 char *get_userById(PGconn *db_conn, char *id);
+
+int deleteUserById(PGconn *db_conn, char *id);
 
 #endif
