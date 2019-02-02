@@ -16,20 +16,15 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
         int contentlen = -1;
         PostHandle *posthandle = *con_cls;
 
-        // In POST mode 1st call is only design to establish POST processor.
-        // As JSON content is not supported out of box, but must provide something equivalent.
         if (posthandle == NULL)
         {
-            posthandle = malloc(sizeof(PostHandle));   // allocate application POST processor handle           // build a UID for DEBUG
-            posthandle->len = 0;                       // effective length within POST handler
-            posthandle->data = malloc(contentlen + 1); // allocate memory for full POST data + 1 for '\0' enf of string
-            *con_cls = posthandle;                     // attache POST handle to current HTTP session
+            posthandle = malloc(sizeof(PostHandle));
+            posthandle->len = 0;
+            posthandle->data = malloc(contentlen + 1);
+            *con_cls = posthandle;
             return MHD_YES;
         }
 
-        // This time we receive partial/all Post data. Note that even if we get all POST data. We should nevertheless
-        // return MHD_YES and not process the request directly. Otherwise Libmicrohttpd is unhappy and fails with
-        // 'Internal application error, closing connection'.
         if (*upload_data_size)
         {
             posthandle->data = malloc((int)*upload_data_size + 1);
@@ -39,11 +34,8 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
             return MHD_YES;
         }
 
-        // We should only start to process DATA after Libmicrohttpd call or application handler with *upload_data_size==0
-        // At this level we're may verify that we got everything and process DATA
         posthandle->data[posthandle->len] = '\0';
 
-        // proceed request data
         json_t *body = json_loads(posthandle->data, posthandle->len, NULL);
         User *user = malloc(sizeof(User));
         user->username = json_string_value(json_object_get(body, "username"));
