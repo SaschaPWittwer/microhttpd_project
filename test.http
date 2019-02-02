@@ -1,19 +1,16 @@
 ###
-GET http://localhost:8888/user/1 HTTP/1.1
+GET http://localhost:8888/user/3 HTTP/1.1
 
 ###
-DELETE http://localhost:8888/user/1 HTTP/1.1
+DELETE http://localhost:8888/user/3 HTTP/1.1
 
 ###
-PUT http://localhost:8888/user/1 HTTP/1.1
+PUT http://localhost:8888/user/2 HTTP/1.1
 
 {
     "username": "joris",
     "password": "lol"
 }
-
-###
-DELETE http://localhost:8888/user/1 HTTP/1.1
 
 ###
 POST http://localhost:8888/user HTTP/1.1
