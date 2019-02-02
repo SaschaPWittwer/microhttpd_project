@@ -38,7 +38,7 @@ unsigned int create_user(PGconn *db_conn, User *user)
 		GNUNET_PQ_query_param_string(user->password),
 		GNUNET_PQ_query_param_end};
 
-	int success = GNUNET_PQ_eval_prepared_non_select(db_conn, "insert_user", params);
+	GNUNET_PQ_eval_prepared_non_select(db_conn, "insert_user", params);
 	return TRUE;
 }
 
@@ -54,7 +54,7 @@ unsigned int update_user(PGconn *db_conn, User *user)
 		GNUNET_PQ_query_param_string(user->password),
 		GNUNET_PQ_query_param_end};
 
-	int success = GNUNET_PQ_eval_prepared_non_select(db_conn, "update_user", params);
+	GNUNET_PQ_eval_prepared_non_select(db_conn, "update_user", params);
 	return TRUE;
 }
 

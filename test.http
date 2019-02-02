@@ -21,7 +21,15 @@ Authorization: Bearer am9yaXM6c3VwZXIxMjM0IQ==
 
 ###
 POST http://localhost:8888/user HTTP/1.1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiJUdWUgSmFuIDE1IDIxOjI1OjA5IDIwMTlcbiIsInJvbGUiOiJBZG1pbiIsInVzZXIiOiJzYXNjaGEifQ.xTR7A7dqT322tElSin1J7oNKhlfBEkG8yTHdcCVT7jQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiJTYXQgRmViICAyIDE0OjM0OjM1IDIwMTlcbiIsInJvbGUiOiJBZG1pbiIsInVzZXIiOiJzYXNjaGEifQ.xqFeSGsOkTnB77Uio9UxkrV20DLoHKNBuL2Im-buISM
+
+{
+    "username": "sascha",
+    "password": "foobar"
+}
+
+###
+POST http://localhost:8888/user HTTP/1.1
 
 {
     "username": "sascha",

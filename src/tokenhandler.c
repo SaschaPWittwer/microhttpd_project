@@ -13,23 +13,8 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
     int ret = 0;
     if (strcmp(method, MHD_HTTP_METHOD_POST) == 0)
     {
-        if (NULL == *con_cls)
-        {
-            *con_cls = connection;
-            return MHD_YES;
-        }
-        const char *param;
-        const char *encoding;
         int contentlen = -1;
         PostHandle *posthandle = *con_cls;
-
-        // Let make sure we have the right encoding and a valid length
-        encoding = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_TYPE);
-        param = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH);
-        if (param)
-        {
-            sscanf(param, "%i", &contentlen);
-        }
 
         // In POST mode 1st call is only design to establish POST processor.
         // As JSON content is not supported out of box, but must provide something equivalent.
@@ -84,8 +69,7 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
             json_decref(msg);
         }
 
-        free((void *)db_user->username);
-        free((void *)db_user->password);
+        json_decref(body);
         free(db_user);
     }
     return ret;

@@ -44,10 +44,7 @@ static int requestDispatcher(void *cls, struct MHD_Connection *connection, const
 		if (strcmp(method, MHD_HTTP_METHOD_GET) == 0)
 			return UH_HandleGet(db_conn, connection, method, userId);
 		if (strcmp(method, MHD_HTTP_METHOD_POST) == 0)
-		{
-			validateJwt(connection);
 			return UH_HandlePost(db_conn, connection, con_cls, method, upload_data, upload_data_size);
-		}
 	}
 	if (strcmp(url, "/token") == 0)
 	{
@@ -62,7 +59,7 @@ int main()
 	db_conn = init_db_connection();
 	init_db(db_conn);
 
-	struct MHD_Daemon *daemon = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, PORT, NULL, NULL,
+	struct MHD_Daemon *daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
 												 &requestDispatcher, NULL, MHD_OPTION_END);
 
 	if (NULL == daemon)

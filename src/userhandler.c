@@ -28,13 +28,19 @@ int UH_HandlePost(PGconn *db_conn, struct MHD_Connection *connection, void **con
 {
 	int ret = 0;
 
-	if (NULL == *con_cls)
+	int contentlen = -1;
+	PostHandle *posthandle = *con_cls;
+
+	// In POST mode 1st call is only design to establish POST processor.
+	// As JSON content is not supported out of box, but must provide something equivalent.
+	if (posthandle == NULL)
 	{
-		*con_cls = connection;
+		posthandle = malloc(sizeof(PostHandle));   // allocate application POST processor handle           // build a UID for DEBUG
+		posthandle->len = 0;					   // effective length within POST handler
+		posthandle->data = malloc(contentlen + 1); // allocate memory for full POST data + 1 for '\0' enf of string
+		*con_cls = posthandle;					   // attache POST handle to current HTTP session
 		return MHD_YES;
 	}
-
-	PostHandle *posthandle = *con_cls;
 
 	// This time we receive partial/all Post data. Note that even if we get all POST data. We should nevertheless
 	// return MHD_YES and not process the request directly. Otherwise Libmicrohttpd is unhappy and fails with
@@ -59,17 +65,16 @@ int UH_HandlePost(PGconn *db_conn, struct MHD_Connection *connection, void **con
 	user->password = json_string_value(json_object_get(body, "password"));
 
 	int res = create_user(db_conn, user);
-	if (res != 0)
+	if (res != 1)
 		return micro_empty_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 
 	json_t *json = json_pack("{s:s}", "username", user->username);
 	char *content = json_dumps(json, 0);
 	ret = micro_respond(connection, content, MHD_HTTP_OK, CONTENT_TYPE_JSON);
+
 	free(content);
 	json_decref(json);
-
-	free((void *)user->username);
-	free((void *)user->password);
+	json_decref(body);
 	free(user);
 
 	return ret;
