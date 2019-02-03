@@ -11,7 +11,7 @@ PGconn *init_db_connection()
 unsigned int init_db(PGconn *db_conn)
 {
 	struct GNUNET_PQ_ExecuteStatement s[] = {
-		GNUNET_PQ_make_execute("CREATE TABLE IF NOT EXISTS \"user\" (username VARCHAR(69) NOT NULL PRIMARY KEY, password VARCHAR NOT NULL);\n"),
+		GNUNET_PQ_make_execute("CREATE TABLE IF NOT EXISTS \"user\" (id SERIAL PRIMARY KEY, username VARCHAR(69) NOT NULL, password VARCHAR NOT NULL);\n"),
 		GNUNET_PQ_EXECUTE_STATEMENT_END};
 
 	int success = GNUNET_PQ_exec_statements(db_conn, s);
@@ -38,26 +38,24 @@ unsigned int create_user(PGconn *db_conn, User *user)
 		GNUNET_PQ_query_param_string(user->password),
 		GNUNET_PQ_query_param_end};
 
-	int success = GNUNET_PQ_eval_prepared_non_select(db_conn, "insert_user", params);
+	GNUNET_PQ_eval_prepared_non_select(db_conn, "insert_user", params);
 	return TRUE;
 }
 
-unsigned int update_user(PGconn *db_conn, User *user)
+unsigned int update_user(PGconn *db_conn, User *user, char *id)
 {
 	struct GNUNET_PQ_PreparedStatement s[] = {
-		GNUNET_PQ_make_prepare("update_user", "UPDATE \"user\" SET password = $2 WHERE username = $1;\n", 2),
+		GNUNET_PQ_make_prepare("update_user", "UPDATE \"user\" SET password = $2, username = $1 WHERE id = $3;\n", 3),
 		GNUNET_PQ_PREPARED_STATEMENT_END};
 	GNUNET_PQ_prepare_statements(db_conn, s);
-
+	uint32_t idAsInt = (uint32_t)atoi(id);
 	struct GNUNET_PQ_QueryParam params[] = {
 		GNUNET_PQ_query_param_string(user->username),
 		GNUNET_PQ_query_param_string(user->password),
+		GNUNET_PQ_query_param_uint32(&idAsInt),
 		GNUNET_PQ_query_param_end};
 
-	int success = GNUNET_PQ_eval_prepared_non_select(db_conn, "update_user", params);
-	if(success < 1){
-		return FALSE;
-	}
+	GNUNET_PQ_eval_prepared_non_select(db_conn, "update_user", params);
 	return TRUE;
 }
 
@@ -99,17 +97,33 @@ User *get_user(PGconn *db_conn, const char *username, const char *password)
 	return NULL;
 }
 
+int deleteUserById(PGconn *db_conn, char *id)
+{
+	struct GNUNET_PQ_PreparedStatement s[] = {
+		GNUNET_PQ_make_prepare("delete_user", "DELETE FROM \"user\" WHERE id=$1;", 1),
+		GNUNET_PQ_PREPARED_STATEMENT_END};
+	GNUNET_PQ_prepare_statements(db_conn, s);
 
-char *get_userById(PGconn *db_conn, int id)
+	uint32_t idAsInt = (uint32_t)atoi(id);
+	struct GNUNET_PQ_QueryParam params[] = {
+		GNUNET_PQ_query_param_uint32(&idAsInt),
+		GNUNET_PQ_query_param_end};
+
+	int result = GNUNET_PQ_eval_prepared_non_select(db_conn, "delete_user", params);
+
+	return TRUE;
+}
+
+char *get_userById(PGconn *db_conn, char *id)
 {
 	struct GNUNET_PQ_PreparedStatement s[] = {
 		GNUNET_PQ_make_prepare("select_user", "SELECT username FROM \"user\" WHERE id=$1;", 1),
 		GNUNET_PQ_PREPARED_STATEMENT_END};
 	GNUNET_PQ_prepare_statements(db_conn, s);
 
+	uint32_t idAsInt = (uint32_t)atoi(id);
 	struct GNUNET_PQ_QueryParam params[] = {
-		GNUNET_PQ_query_param_string(username),
-		GNUNET_PQ_query_param_uint32
+		GNUNET_PQ_query_param_uint32(&idAsInt),
 		GNUNET_PQ_query_param_end};
 
 	char *val_username;
