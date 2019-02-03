@@ -12,7 +12,14 @@ int UH_HandleGet(PGconn *db_conn, struct MHD_Connection *connection, const char 
 	json_t *json = json_pack("{s:s}", "Username", username);
 	char *content = json_dumps(json, 0);
 
-	ret = micro_respond(connection, content, MHD_HTTP_OK, CONTENT_TYPE_JSON);
+	if (username == NULL)
+	{
+		ret = micro_empty_response(connection, MHD_HTTP_NOT_FOUND);
+	}
+	else
+	{
+		ret = micro_respond(connection, content, MHD_HTTP_OK, CONTENT_TYPE_JSON);
+	}
 
 	json_decref(json);
 
@@ -23,8 +30,11 @@ int UH_HandleDelete(PGconn *db_conn, struct MHD_Connection *connection, const ch
 {
 	int ret = 0;
 	int success = deleteUserById(db_conn, userId);
-
-	return micro_empty_response(connection, MHD_HTTP_OK);
+	if(success < 1){
+		return micro_empty_response(connection, MHD_HTTP_NOT_FOUND); 
+	}else{
+		return micro_empty_response(connection, MHD_HTTP_OK);
+	}	
 }
 
 int UH_HandlePost(PGconn *db_conn, struct MHD_Connection *connection, void **con_cls, const char *method, const char *upload_data,
@@ -58,7 +68,7 @@ int UH_HandlePost(PGconn *db_conn, struct MHD_Connection *connection, void **con
 	user->password = json_string_value(json_object_get(body, "password"));
 
 	int res = create_user(db_conn, user);
-	if (res != 1)
+	if (res < 1)
 		return micro_empty_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 
 	json_t *json = json_pack("{s:s}", "username", user->username);
@@ -105,8 +115,8 @@ int UH_HandlePut(PGconn *db_conn, struct MHD_Connection *connection, void **con_
 	printf(user->username);
 
 	int res = update_user(db_conn, user, meta->userId);
-	if (res != 1)
-		return micro_empty_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+	if (res < 1)
+		return micro_empty_response(connection, MHD_HTTP_NOT_FOUND);
 
 	json_t *json = json_pack("{s:s}", "username", user->username);
 	char *content = json_dumps(json, 0);
