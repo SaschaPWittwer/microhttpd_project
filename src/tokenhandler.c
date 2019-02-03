@@ -14,29 +14,26 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
     if (strcmp(method, MHD_HTTP_METHOD_POST) == 0)
     {
         int contentlen = -1;
-        PostHandle *posthandle = *con_cls;
+        MySessionData *meta = *con_cls;
 
-        if (posthandle == NULL)
+        if (meta->data == NULL)
         {
-            posthandle = malloc(sizeof(PostHandle));
-            posthandle->len = 0;
-            posthandle->data = malloc(contentlen + 1);
-            *con_cls = posthandle;
-            return MHD_YES;
+            meta->len = 0;
+            meta->data = malloc(contentlen + 1);
         }
 
         if (*upload_data_size)
         {
-            posthandle->data = malloc((int)*upload_data_size + 1);
-            memcpy(&posthandle->data[posthandle->len], upload_data, *upload_data_size);
-            posthandle->len = posthandle->len + *upload_data_size;
+            meta->data = malloc((int)*upload_data_size + 1);
+            memcpy(&meta->data[meta->len], upload_data, *upload_data_size);
+            meta->len = meta->len + *upload_data_size;
             *upload_data_size = 0;
             return MHD_YES;
         }
 
-        posthandle->data[posthandle->len] = '\0';
+        meta->data[meta->len] = '\0';
 
-        json_t *body = json_loads(posthandle->data, posthandle->len, NULL);
+        json_t *body = json_loads(meta->data, meta->len, NULL);
         User *user = malloc(sizeof(User));
         user->username = json_string_value(json_object_get(body, "username"));
         user->password = json_string_value(json_object_get(body, "password"));
@@ -44,7 +41,6 @@ int TH_HandleRequest(PGconn *db_conn, struct MHD_Connection *connection, void **
         User *db_user = get_user(db_conn, user->username, user->password);
         if (strcmp(db_user->username, user->username) == 0 && strcmp(db_user->password, user->password) == 0)
         {
-            update_user(db_conn, user);
             char *token = generateJwt(db_user->username, "Admin");
             json_t *json = json_pack("{s:s}", "token", token);
             char *content = json_dumps(json, 0);

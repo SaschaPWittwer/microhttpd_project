@@ -113,7 +113,7 @@ requestDispatcher(void *cls, struct MHD_Connection *connection, const char *url,
 	}
 	if (strcmp(url, "/token") == 0)
 	{
-		ret = TH_HandleRequest(db_conn, connection, con_cls, method, upload_data, upload_data_size);
+		return TH_HandleRequest(db_conn, connection, con_cls, method, upload_data, upload_data_size);
 	}
 
 	free(data);
