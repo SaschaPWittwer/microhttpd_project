@@ -1,16 +1,48 @@
-GET http://localhost:8888/user HTTP/1.1
-Authorization: Basic am9yaXM6c3VwZXIxMjM0IQ==
-
+###
+GET http://localhost:8888/user/7 HTTP/1.1
 
 ###
+DELETE http://localhost:8888/user/6 HTTP/1.1
 
-GET http://localhost:8888/user HTTP/1.1
-Authorization: Basic am9yaXM6c3VwZXIxMjM0IQ==
+###
+PUT http://localhost:8888/user/7 HTTP/1.1
 
+{
+    "username": "joris",
+    "password": "lol"
+}
 
 ###
 POST http://localhost:8888/user HTTP/1.1
-Content-Type: application/json
 
-{"username": "joris", "password": "super1234!"}
+{
+    "username": "Joris",
+    "password": "wtf"
+}
+
+
 ###
+POST http://localhost:8888/token HTTP/1.1
+
+{
+    "username": "Joris",
+    "password": "wtf"
+}
+
+
+
+
+
+
+
+
+
+
+
+###
+POST http://localhost:8888/token HTTP/1.1
+
+{
+    "username": "sascha",
+    "password": "foobar"
+}

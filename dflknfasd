@@ -1,0 +1,11 @@
+INSERT INTO user (username, password) VALUES ('sascha', '123qwe')
+;
+select * from user;
+INSERT INTO "user" (username, password) VALUES ('sascha', '123qwe');
+select * from "user"
+;
+select * from user
+;
+select * from "user"
+;
+\s

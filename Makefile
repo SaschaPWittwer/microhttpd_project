@@ -12,7 +12,7 @@ BIN = microserver
 LDLIBS = -L$(HOME)/lib
 
 # variable called LDFLAGS for the list of libraries required during linking
-LDFLAGS = -lmicrohttpd -lz -lgnunetpq -lpq -ljansson
+LDFLAGS = -lmicrohttpd -lz -lgnunetpq -lpq -ljansson -ljwt
 
 # Extra flags to give to the C preprocessor and programs that use it
 CPPFLAGS = -I$(HOME)/include -I/usr/include/postgresql -I./src
